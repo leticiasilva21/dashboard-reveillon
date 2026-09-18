@@ -62,6 +62,12 @@
   .btn-ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
   .btn-danger { background: var(--down); color: #fff; }
   .login-error { color: var(--down); font-size: 12.5px; margin-top: 10px; min-height: 16px; }
+  .login-ok { color: var(--up); font-size: 12.5px; margin-top: 10px; min-height: 16px; }
+  .btn-link {
+    display: block; width: 100%; text-align: center; margin-top: 14px; background: none; border: none;
+    color: var(--muted); font-size: 12.5px; text-decoration: underline; cursor: pointer; padding: 4px;
+  }
+  .btn-link:hover { color: var(--navy); }
 
   /* ---- shell do dashboard ---- */
   #app { display: none; }
@@ -179,6 +185,29 @@
       </div>
       <button type="submit" class="btn btn-primary" id="loginBtn">Entrar</button>
       <div class="login-error" id="loginError"></div>
+      <button type="button" class="btn-link" id="forgotBtn">Esqueci minha senha</button>
+    </form>
+
+    <form id="forgotForm" class="hidden">
+      <p class="sub" style="margin-bottom:14px;">Informe seu e-mail — vamos mandar um link para você definir uma nova senha.</p>
+      <div class="field">
+        <label for="forgotEmail">E-mail</label>
+        <input type="email" id="forgotEmail" autocomplete="username" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="forgotBtnSubmit">Enviar link</button>
+      <div class="login-error" id="forgotError"></div>
+      <div class="login-ok" id="forgotOk"></div>
+      <button type="button" class="btn-link" id="backToLoginBtn">Voltar para o login</button>
+    </form>
+
+    <form id="resetForm" class="hidden">
+      <p class="sub" style="margin-bottom:14px;">Defina sua nova senha.</p>
+      <div class="field">
+        <label for="newPassword">Nova senha</label>
+        <input type="password" id="newPassword" autocomplete="new-password" minlength="6" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="resetBtnSubmit">Salvar nova senha</button>
+      <div class="login-error" id="resetError"></div>
     </form>
   </div>
 </div>
@@ -333,6 +362,43 @@ async function login(email, password) {
   session = { access_token: data.access_token, refresh_token: data.refresh_token };
   sessionStorage.setItem("reveillon_session", JSON.stringify(session));
   return session;
+}
+
+async function requestPasswordReset(email) {
+  const redirectTo = window.location.origin + window.location.pathname;
+  const resp = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, options: { redirect_to: redirectTo } }),
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data?.error_description || data?.msg || "Não consegui enviar o e-mail de redefinição.");
+  }
+}
+
+async function setNewPassword(recoveryAccessToken, newPassword) {
+  const resp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${recoveryAccessToken}`,
+    },
+    body: JSON.stringify({ password: newPassword }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.error_description || data?.msg || "Não consegui salvar a nova senha.");
+  return data;
+}
+
+function parseRecoveryHash() {
+  const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  const params = new URLSearchParams(hash);
+  if (params.get("type") === "recovery" && params.get("access_token")) {
+    return { access_token: params.get("access_token") };
+  }
+  return null;
 }
 function restoreSession() {
   const raw = sessionStorage.getItem("reveillon_session");
@@ -620,6 +686,54 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   }
 });
 
+document.getElementById("forgotBtn").addEventListener("click", () => {
+  document.getElementById("forgotEmail").value = document.getElementById("email").value;
+  document.getElementById("loginForm").classList.add("hidden");
+  document.getElementById("forgotForm").classList.remove("hidden");
+});
+document.getElementById("backToLoginBtn").addEventListener("click", () => {
+  document.getElementById("forgotForm").classList.add("hidden");
+  document.getElementById("loginForm").classList.remove("hidden");
+});
+document.getElementById("forgotForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("forgotBtnSubmit");
+  const errEl = document.getElementById("forgotError");
+  const okEl = document.getElementById("forgotOk");
+  errEl.textContent = ""; okEl.textContent = "";
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    await requestPasswordReset(document.getElementById("forgotEmail").value.trim());
+    okEl.textContent = "Prontinho! Confira seu e-mail (e a caixa de spam) para o link de redefinição.";
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Enviar link";
+  }
+});
+document.getElementById("resetForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("resetBtnSubmit");
+  const errEl = document.getElementById("resetError");
+  errEl.textContent = "";
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    const recovery = parseRecoveryHash();
+    if (!recovery) throw new Error("Link de redefinição inválido ou expirado. Peça um novo.");
+    await setNewPassword(recovery.access_token, document.getElementById("newPassword").value);
+    session = { access_token: recovery.access_token, refresh_token: null };
+    sessionStorage.setItem("reveillon_session", JSON.stringify(session));
+    history.replaceState(null, "", window.location.pathname);
+    document.getElementById("resetForm").classList.add("hidden");
+    document.getElementById("loginForm").classList.remove("hidden");
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Salvar nova senha";
+  }
+});
+
 document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", loadAll);
 document.getElementById("filterCidade").addEventListener("change", applyFiltersAndRender);
@@ -639,7 +753,11 @@ function showApp() {
   loadAll();
 }
 
-if (restoreSession()) {
+const recoveryOnLoad = parseRecoveryHash();
+if (recoveryOnLoad) {
+  document.getElementById("loginForm").classList.add("hidden");
+  document.getElementById("resetForm").classList.remove("hidden");
+} else if (restoreSession()) {
   showApp();
 }
 </script>
