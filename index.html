@@ -73,24 +73,35 @@
   #app { display: none; }
   .topbar {
     display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    padding: 14px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+    padding: 14px 22px; flex-wrap: wrap;
+    background: var(--navy);
+    border-bottom: 3px solid var(--orange);
   }
-  .brand { display: flex; align-items: baseline; gap: 8px; }
-  .brand .t1 { font-size: 17px; font-weight: 800; color: var(--navy); }
-  .brand .t2 { font-size: 12.5px; color: var(--muted); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand .t1 { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: .01em; }
+  .brand .t1 b { color: var(--orange); }
+  .brand .t2 { font-size: 11.5px; color: #B9C2D6; }
   .topbar-actions { display: flex; align-items: center; gap: 10px; }
-  .sync-note { font-size: 11.5px; color: var(--muted); }
+  .sync-note { font-size: 11.5px; color: #B9C2D6; }
+  .topbar-actions .btn-ghost { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.18); }
+  .topbar-actions .btn-ghost:hover { background: rgba(255,255,255,.16); }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 22px; }
 
   /* ---- KPIs ---- */
   .kpis {
     display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px;
-    background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-    margin-bottom: 10px;
+    background: var(--line); border: 1px solid var(--line); border-top: 3px solid var(--orange);
+    border-radius: 12px; overflow: hidden; margin-bottom: 10px;
   }
   .kpi { background: #fff; padding: 16px 14px; }
   .kpi .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
   .kpi .v { font-size: 21px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .kpi-yoy { font-size: 11px; font-weight: 700; margin-top: 4px; }
   .kpi .v small { font-size: 12px; font-weight: 600; color: var(--muted); }
 
   .pace-row {
@@ -133,8 +144,20 @@
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #FAFBFC; }
   .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-  .imovel-name { font-weight: 600; font-size: 12.5px; }
-  .imovel-loc { font-size: 11.5px; color: var(--muted); }
+  .imovel-name { font-weight: 600; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+  .imovel-loc { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .id-tag { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  .copy-btn {
+    border: none; background: none; cursor: pointer; padding: 1px 3px; color: var(--muted); font-size: 11px;
+    border-radius: 4px; line-height: 1;
+  }
+  .copy-btn:hover { background: var(--panel); color: var(--navy); }
+  .copy-btn.copied { color: var(--up); }
+  .clone-badge {
+    display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .02em; color: var(--orange); background: var(--warn-bg); border: 1px solid #F5D2AE;
+    border-radius: 4px; padding: 1px 6px; cursor: help;
+  }
   .yoy { font-weight: 700; font-variant-numeric: tabular-nums; }
   .yoy.up { color: var(--up); }
   .yoy.down { color: var(--down); }
@@ -215,8 +238,16 @@
 <div id="app">
   <div class="topbar">
     <div class="brand">
-      <span class="t1">🎆 Reveillon</span>
-      <span class="t2">acompanhamento de vendas — base 31/12</span>
+      <div class="brand-mark">
+        <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="15" cy="15" r="15" fill="#F26B2E"/>
+          <path d="M18.5 9.5a6 6 0 1 0 0 11 7 7 0 1 1 0-11Z" fill="#16294F"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="t1">Carpe<b>diem</b> · Reveillon</span>
+        <span class="t2">acompanhamento de vendas — base 31/12</span>
+      </div>
     </div>
     <div class="topbar-actions">
       <span class="sync-note" id="lastUpdated">—</span>
@@ -228,8 +259,8 @@
   <div class="wrap">
     <div class="kpis" id="kpiGrid">
       <div class="kpi"><div class="l">Imóveis reservados</div><div class="v" id="kImoveis">—</div></div>
-      <div class="kpi"><div class="l">Ticket médio / noite</div><div class="v" id="kTicketNoite">—</div></div>
-      <div class="kpi"><div class="l">Ticket médio / reserva</div><div class="v" id="kTicketReserva">—</div></div>
+      <div class="kpi"><div class="l">Ticket médio / noite</div><div class="v" id="kTicketNoite">—</div><div id="kTicketNoiteYoy"></div></div>
+      <div class="kpi"><div class="l">Ticket médio / reserva</div><div class="v" id="kTicketReserva">—</div><div id="kTicketReservaYoy"></div></div>
       <div class="kpi"><div class="l">Receita vendida</div><div class="v" id="kReceita">—</div></div>
       <div class="kpi"><div class="l">Estoque disponível</div><div class="v" id="kEstoqueUn">—</div></div>
       <div class="kpi"><div class="l">Valor do estoque disponível</div><div class="v" id="kEstoqueValor">—</div></div>
@@ -254,6 +285,12 @@
       </div>
       <select class="filter" id="filterCidade"><option value="">Todas as cidades</option></select>
       <select class="filter" id="filterRegiao"><option value="">Todas as praias/regiões</option></select>
+      <select class="filter" id="sortBy">
+        <option value="nome_asc">Nome (A→Z)</option>
+        <option value="nome_desc">Nome (Z→A)</option>
+        <option value="valor_desc">Valor (maior→menor)</option>
+        <option value="valor_asc">Valor (menor→maior)</option>
+      </select>
       <div class="spacer"></div>
       <span class="count-note" id="countNote"></span>
     </div>
@@ -265,9 +302,11 @@
             <th>Imóvel</th>
             <th class="num">Diária</th>
             <th class="num">Pacote (28/12–02/01)</th>
-            <th class="num">Vendido ano passado</th>
+            <th class="num">Valor vendido ano passado</th>
+            <th class="num">Diárias vendidas ano passado</th>
             <th class="num">Antecedência ano passado</th>
-            <th class="num">YoY %</th>
+            <th class="num">YoY pacote</th>
+            <th class="num">YoY diária</th>
             <th>Ajustar %</th>
             <th></th>
           </tr>
@@ -478,6 +517,8 @@ function renderKpis(k) {
   document.getElementById("kImoveis").textContent = fmtNum(k.imoveis_reservados);
   document.getElementById("kTicketNoite").textContent = fmtBRL(k.ticket_medio_noite);
   document.getElementById("kTicketReserva").textContent = fmtBRL(k.ticket_medio_reserva);
+  document.getElementById("kTicketNoiteYoy").innerHTML = `<div class="kpi-yoy">${yoyHtml(k.yoy_ticket_noite_pct)} <span style="color:var(--muted);font-weight:500;">YoY</span></div>`;
+  document.getElementById("kTicketReservaYoy").innerHTML = `<div class="kpi-yoy">${yoyHtml(k.yoy_ticket_reserva_pct)} <span style="color:var(--muted);font-weight:500;">YoY</span></div>`;
   document.getElementById("kReceita").textContent = fmtBRL(k.receita_vendida);
   document.getElementById("kEstoqueUn").textContent = fmtNum(k.estoque_disponivel_unidades);
   document.getElementById("kEstoqueValor").textContent = fmtBRL(k.estoque_disponivel_valor);
@@ -515,11 +556,23 @@ function populateFilters() {
   selCidade.value = curCidade; selRegiao.value = curRegiao;
 }
 
+function sortRows(rows, sortKey, valueField) {
+  const sorted = [...rows];
+  if (sortKey === "nome_asc") sorted.sort((a, b) => (a.nome_interno || "").localeCompare(b.nome_interno || "", "pt-BR"));
+  else if (sortKey === "nome_desc") sorted.sort((a, b) => (b.nome_interno || "").localeCompare(a.nome_interno || "", "pt-BR"));
+  else if (sortKey === "valor_desc") sorted.sort((a, b) => (Number(b[valueField]) || -Infinity) - (Number(a[valueField]) || -Infinity));
+  else if (sortKey === "valor_asc") sorted.sort((a, b) => (Number(a[valueField]) ?? Infinity) - (Number(b[valueField]) ?? Infinity));
+  return sorted;
+}
+
 function applyFiltersAndRender() {
   const cidade = document.getElementById("filterCidade").value;
   const regiao = document.getElementById("filterRegiao").value;
+  const sortKey = document.getElementById("sortBy").value;
   const src = currentView === "disponiveis" ? dataDisponiveis : dataVendidos;
-  const filtered = src.filter(r => (!cidade || r.cidade === cidade) && (!regiao || r.regiao === regiao));
+  const valueField = currentView === "disponiveis" ? "package_price" : "valor_este_ano";
+  let filtered = src.filter(r => (!cidade || r.cidade === cidade) && (!regiao || r.regiao === regiao));
+  filtered = sortRows(filtered, sortKey, valueField);
 
   document.getElementById("tblDisponiveis").classList.toggle("hidden", currentView !== "disponiveis");
   document.getElementById("tblVendidos").classList.toggle("hidden", currentView !== "vendidos");
@@ -530,11 +583,33 @@ function applyFiltersAndRender() {
   else renderVendidos(filtered);
 }
 
+function idCell(nome, idCurto, idLong) {
+  return `
+    <div class="imovel-name">
+      <span>${escapeHtml(nome)}</span>
+      <button class="copy-btn" title="Copiar nome interno" onclick="copyToClipboard('${escapeHtml(nome).replace(/'/g, "\\'")}', this)">⧉</button>
+    </div>
+    <div class="imovel-loc">
+      ${idCurto ? `<span class="id-tag">${escapeHtml(idCurto)}</span><button class="copy-btn" title="Copiar código curto" onclick="copyToClipboard('${escapeHtml(idCurto)}', this)">⧉</button>` : ""}
+    </div>`;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (!btn) return;
+    btn.classList.add("copied");
+    const original = btn.textContent;
+    btn.textContent = "✓";
+    setTimeout(() => { btn.classList.remove("copied"); btn.textContent = original; }, 1200);
+  });
+}
+window.copyToClipboard = copyToClipboard;
+
 function renderVendidos(rows) {
   const tbody = document.getElementById("bodyVendidos");
   tbody.innerHTML = rows.map(r => `
     <tr>
-      <td><div class="imovel-name">${escapeHtml(r.nome_interno)}</div><div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
+      <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
       <td class="num">${fmtBRLDec(r.valor_este_ano)}</td>
       <td class="num">${fmtNum(r.noites_este_ano)}</td>
       <td class="num">${r.antecedencia_este_ano ?? "—"} dias</td>
@@ -549,14 +624,19 @@ function renderDisponiveis(rows) {
   const tbody = document.getElementById("bodyDisponiveis");
   tbody.innerHTML = rows.map((r, i) => {
     const rowId = `row_${r.stays_id_long}`;
+    const cloneBadge = r.is_price_clone
+      ? `<span class="clone-badge" title="Preço clonado de: ${escapeHtml(r.price_master_internal_name || r.price_master_stays_id_long || '')}${r.price_master_id_curto ? ' (' + escapeHtml(r.price_master_id_curto) + ')' : ''}">clone de preço</span>`
+      : "";
     return `
     <tr id="${rowId}">
-      <td><div class="imovel-name">${escapeHtml(r.nome_interno)}</div><div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
+      <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}${cloneBadge ? " " + cloneBadge : ""}</div></td>
       <td class="num" id="${rowId}_diaria">${r.nightly_rate !== null ? fmtBRLDec(r.nightly_rate) : "sem sync"}</td>
       <td class="num" id="${rowId}_pacote">${r.package_price !== null ? fmtBRLDec(r.package_price) : "sem sync"}</td>
       <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
+      <td class="num">${r.noites_ano_passado !== null && r.noites_ano_passado !== undefined ? fmtNum(r.noites_ano_passado) : "—"}</td>
       <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
       <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num">${yoyHtml(r.yoy_diaria_pct)}</td>
       <td>
         <div class="adj-cell">
           <select id="${rowId}_tipo">
@@ -738,6 +818,7 @@ document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", loadAll);
 document.getElementById("filterCidade").addEventListener("change", applyFiltersAndRender);
 document.getElementById("filterRegiao").addEventListener("change", applyFiltersAndRender);
+document.getElementById("sortBy").addEventListener("change", applyFiltersAndRender);
 document.querySelectorAll(".toggle-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
