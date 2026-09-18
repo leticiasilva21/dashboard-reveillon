@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Reveillon — Acompanhamento de vendas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --navy: #16294F;
+    --orange: #F26B2E;
+    --ink: #1F2430;
+    --muted: #737C8C;
+    --line: #E7E9EE;
+    --panel: #F7F8FA;
+    --up: #1E8E5A;
+    --down: #C23B3B;
+    --warn-bg: #FFF4E8;
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #FFFFFF;
+    color: var(--ink);
+  }
+  body { min-height: 100vh; }
+  input, select, button { font-family: inherit; }
+
+  /* ---- barra de carregamento ---- */
+  #loadbar {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: var(--orange); z-index: 999; transition: width .3s ease, opacity .3s ease;
+  }
+  #loadbar.done { opacity: 0; }
+
+  /* ---- login ---- */
+  #loginScreen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--panel);
+  }
+  .login-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 36px 32px; width: 100%; max-width: 360px; box-shadow: 0 8px 30px rgba(22,41,79,0.07);
+  }
+  .login-card h1 { font-size: 19px; color: var(--navy); margin-bottom: 4px; }
+  .login-card p.sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .field input {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px;
+  }
+  .field input:focus { outline: 2px solid var(--orange); outline-offset: -1px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: none; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    padding: 10px 16px; transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(0.95); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-primary { background: var(--navy); color: #fff; width: 100%; }
+  .btn-orange { background: var(--orange); color: #fff; }
+  .btn-ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+  .btn-danger { background: var(--down); color: #fff; }
+  .login-error { color: var(--down); font-size: 12.5px; margin-top: 10px; min-height: 16px; }
+
+  /* ---- shell do dashboard ---- */
+  #app { display: none; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 14px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 8px; }
+  .brand .t1 { font-size: 17px; font-weight: 800; color: var(--navy); }
+  .brand .t2 { font-size: 12.5px; color: var(--muted); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .sync-note { font-size: 11.5px; color: var(--muted); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 22px; }
+
+  /* ---- KPIs ---- */
+  .kpis {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .kpi { background: #fff; padding: 16px 14px; }
+  .kpi .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
+  .kpi .v { font-size: 21px; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .kpi .v small { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+  .pace-row {
+    display: flex; align-items: center; gap: 18px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 26px;
+    flex-wrap: wrap;
+  }
+  .pace-row .item { display: flex; flex-direction: column; gap: 2px; }
+  .pace-row .item .l { font-size: 11.5px; color: var(--muted); }
+  .pace-row .item .v { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pace-badge {
+    font-size: 12.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
+  .pace-badge.up { background: #E7F5EC; color: var(--up); }
+  .pace-badge.down { background: #FBEAEA; color: var(--down); }
+
+  /* ---- toggle + filtros ---- */
+  .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .toggle-group { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .toggle-btn {
+    border: none; background: transparent; padding: 7px 16px; font-size: 13px; font-weight: 700;
+    border-radius: 999px; cursor: pointer; color: var(--muted);
+  }
+  .toggle-btn.active { background: var(--navy); color: #fff; }
+  select.filter {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; color: var(--ink); background: #fff;
+  }
+  .spacer { flex: 1; }
+  .count-note { font-size: 12.5px; color: var(--muted); }
+
+  /* ---- tabela ---- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; min-width: 920px; }
+  thead th {
+    position: sticky; top: 0; background: var(--panel); text-align: left; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700;
+    padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #FAFBFC; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .imovel-name { font-weight: 600; font-size: 12.5px; }
+  .imovel-loc { font-size: 11.5px; color: var(--muted); }
+  .yoy { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .yoy.up { color: var(--up); }
+  .yoy.down { color: var(--down); }
+  .yoy.na { color: var(--muted); font-weight: 500; }
+
+  .adj-cell { display: flex; align-items: center; gap: 6px; }
+  .adj-cell select { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; }
+  .adj-cell input[type="number"] {
+    width: 58px; padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; text-align: right;
+  }
+  .preview-price { font-size: 11.5px; color: var(--orange); font-weight: 700; margin-top: 2px; }
+  .save-row-btn {
+    font-size: 11.5px; padding: 5px 9px; border-radius: 6px; background: var(--navy); color: #fff; border: none; cursor: pointer;
+  }
+  .save-row-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .applied-tag { font-size: 10.5px; color: var(--up); font-weight: 700; }
+
+  .empty-state { padding: 40px; text-align: center; color: var(--muted); font-size: 13.5px; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .topbar { padding: 12px 16px; }
+    .wrap { padding: 16px; }
+    .pace-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loadbar"></div>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Reveillon — acompanhamento de vendas</h1>
+    <p class="sub">Entre com a mesma conta que você usa no Carpe Diem Insights.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input type="password" id="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="loginBtn">Entrar</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="t1">🎆 Reveillon</span>
+      <span class="t2">acompanhamento de vendas — base 31/12</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="sync-note" id="lastUpdated">—</span>
+      <button class="btn btn-ghost" id="refreshBtn">Atualizar</button>
+      <button class="btn btn-ghost" id="logoutBtn">Sair</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="kpis" id="kpiGrid">
+      <div class="kpi"><div class="l">Imóveis reservados</div><div class="v" id="kImoveis">—</div></div>
+      <div class="kpi"><div class="l">Ticket médio / noite</div><div class="v" id="kTicketNoite">—</div></div>
+      <div class="kpi"><div class="l">Ticket médio / reserva</div><div class="v" id="kTicketReserva">—</div></div>
+      <div class="kpi"><div class="l">Receita vendida</div><div class="v" id="kReceita">—</div></div>
+      <div class="kpi"><div class="l">Estoque disponível</div><div class="v" id="kEstoqueUn">—</div></div>
+      <div class="kpi"><div class="l">Valor do estoque disponível</div><div class="v" id="kEstoqueValor">—</div></div>
+    </div>
+
+    <div class="pace-row" id="paceRow">
+      <div class="item">
+        <span class="l">Vendido até hoje (<span id="paceDataEste">—</span>)</span>
+        <span class="v" id="paceEste">—</span>
+      </div>
+      <div class="item">
+        <span class="l">Vendido até o mesmo dia ano passado (<span id="paceDataAno">—</span>)</span>
+        <span class="v" id="paceAno">—</span>
+      </div>
+      <span class="pace-badge" id="paceBadge">—</span>
+    </div>
+
+    <div class="controls">
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-view="disponiveis">Disponíveis</button>
+        <button class="toggle-btn" data-view="vendidos">Vendidos</button>
+      </div>
+      <select class="filter" id="filterCidade"><option value="">Todas as cidades</option></select>
+      <select class="filter" id="filterRegiao"><option value="">Todas as praias/regiões</option></select>
+      <div class="spacer"></div>
+      <span class="count-note" id="countNote"></span>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblDisponiveis">
+        <thead>
+          <tr>
+            <th>Imóvel</th>
+            <th class="num">Diária</th>
+            <th class="num">Pacote (28/12–02/01)</th>
+            <th class="num">Vendido ano passado</th>
+            <th class="num">Antecedência ano passado</th>
+            <th class="num">YoY %</th>
+            <th>Ajustar %</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="bodyDisponiveis"></tbody>
+      </table>
+      <table id="tblVendidos" class="hidden">
+        <thead>
+          <tr>
+            <th>Imóvel</th>
+            <th class="num">Valor este ano</th>
+            <th class="num">Noites</th>
+            <th class="num">Antecedência este ano</th>
+            <th class="num">Valor ano passado</th>
+            <th class="num">Antecedência ano passado</th>
+            <th class="num">YoY %</th>
+          </tr>
+        </thead>
+        <tbody id="bodyVendidos"></tbody>
+      </table>
+      <div class="empty-state hidden" id="emptyState">Nenhum imóvel bate com esse filtro.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ucavfotyciwnqwurzjny.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjYXZmb3R5Y2l3bnF3dXJ6am55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzUzNjYsImV4cCI6MjA3MzU1MTM2Nn0.nE_W8wZZvJfzlvhP83ge1J0ooS3EcFVSlQYK28eTGU0";
+const PACKAGE_FROM = "2026-12-28";
+const PACKAGE_TO = "2027-01-02";
+const PACKAGE_DAYS = ["2026-12-28","2026-12-29","2026-12-30","2026-12-31","2027-01-01","2027-01-02"];
+
+let session = null; // { access_token, refresh_token }
+let dataDisponiveis = [];
+let dataVendidos = [];
+let currentView = "disponiveis";
+
+// ---------- barra de carregamento ----------
+let loadCount = 0;
+function loadStart() {
+  loadCount++;
+  const bar = document.getElementById("loadbar");
+  bar.classList.remove("done");
+  bar.style.width = "70%";
+}
+function loadEnd() {
+  loadCount = Math.max(0, loadCount - 1);
+  if (loadCount === 0) {
+    const bar = document.getElementById("loadbar");
+    bar.style.width = "100%";
+    setTimeout(() => { bar.classList.add("done"); setTimeout(() => { bar.style.width = "0%"; }, 300); }, 200);
+  }
+}
+
+// ---------- helpers ----------
+function fmtBRL(v) {
+  if (v === null || v === undefined) return "—";
+  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+function fmtBRLDec(v) {
+  if (v === null || v === undefined) return "—";
+  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+}
+function fmtNum(v) {
+  if (v === null || v === undefined) return "—";
+  return Number(v).toLocaleString("pt-BR");
+}
+function fmtData(d) {
+  if (!d) return "—";
+  const [y,m,day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function yoyHtml(pct) {
+  if (pct === null || pct === undefined) return `<span class="yoy na">sem comparação</span>`;
+  const cls = pct >= 0 ? "up" : "down";
+  const sign = pct >= 0 ? "+" : "";
+  return `<span class="yoy ${cls}">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+// ---------- auth ----------
+async function login(email, password) {
+  const resp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.error_description || data?.msg || "Falha no login");
+  session = { access_token: data.access_token, refresh_token: data.refresh_token };
+  sessionStorage.setItem("reveillon_session", JSON.stringify(session));
+  return session;
+}
+function restoreSession() {
+  const raw = sessionStorage.getItem("reveillon_session");
+  if (!raw) return false;
+  try { session = JSON.parse(raw); return !!session?.access_token; } catch { return false; }
+}
+function logout() {
+  sessionStorage.removeItem("reveillon_session");
+  session = null;
+  document.getElementById("app").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+}
+
+// ---------- chamadas Supabase ----------
+async function rpc(name, args) {
+  loadStart();
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(args || {}),
+    });
+    if (resp.status === 401) { logout(); throw new Error("Sessão expirada, faça login novamente."); }
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.message || "Erro ao consultar dados.");
+    return data;
+  } finally {
+    loadEnd();
+  }
+}
+
+async function staysProxy(endpoint, method, params, body) {
+  loadStart();
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/stays-proxy-hp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ endpoint, method: method || "GET", params, body }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error || "Erro ao falar com a Stays.");
+    return data;
+  } finally {
+    loadEnd();
+  }
+}
+
+// ---------- carregar dashboard ----------
+async function loadAll() {
+  try {
+    const [kpis, disponiveis, vendidos] = await Promise.all([
+      rpc("reveillon_kpis"),
+      rpc("reveillon_available_list"),
+      rpc("reveillon_sold_list"),
+    ]);
+    renderKpis(kpis[0]);
+    dataDisponiveis = disponiveis;
+    dataVendidos = vendidos;
+    populateFilters();
+    applyFiltersAndRender();
+    document.getElementById("lastUpdated").textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function renderKpis(k) {
+  if (!k) return;
+  document.getElementById("kImoveis").textContent = fmtNum(k.imoveis_reservados);
+  document.getElementById("kTicketNoite").textContent = fmtBRL(k.ticket_medio_noite);
+  document.getElementById("kTicketReserva").textContent = fmtBRL(k.ticket_medio_reserva);
+  document.getElementById("kReceita").textContent = fmtBRL(k.receita_vendida);
+  document.getElementById("kEstoqueUn").textContent = fmtNum(k.estoque_disponivel_unidades);
+  document.getElementById("kEstoqueValor").textContent = fmtBRL(k.estoque_disponivel_valor);
+
+  const hojeStr = new Date().toISOString().slice(0, 10);
+  const hojeAnoPassado = new Date();
+  hojeAnoPassado.setFullYear(hojeAnoPassado.getFullYear() - 1);
+  document.getElementById("paceDataEste").textContent = fmtData(hojeStr);
+  document.getElementById("paceDataAno").textContent = fmtData(hojeAnoPassado.toISOString().slice(0, 10));
+  document.getElementById("paceEste").textContent = fmtBRL(k.vendido_este_ano_hoje);
+  document.getElementById("paceAno").textContent = fmtBRL(k.vendido_ano_passado_mesma_data);
+
+  const badge = document.getElementById("paceBadge");
+  const este = Number(k.vendido_este_ano_hoje || 0);
+  const ano = Number(k.vendido_ano_passado_mesma_data || 0);
+  if (ano > 0) {
+    const pct = ((este - ano) / ano) * 100;
+    badge.textContent = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "% YoY";
+    badge.className = "pace-badge " + (pct >= 0 ? "up" : "down");
+  } else {
+    badge.textContent = "sem comparação";
+    badge.className = "pace-badge";
+  }
+}
+
+function populateFilters() {
+  const all = [...dataDisponiveis, ...dataVendidos];
+  const cidades = [...new Set(all.map(r => r.cidade).filter(Boolean))].sort();
+  const regioes = [...new Set(all.map(r => r.regiao).filter(Boolean))].sort();
+  const selCidade = document.getElementById("filterCidade");
+  const selRegiao = document.getElementById("filterRegiao");
+  const curCidade = selCidade.value, curRegiao = selRegiao.value;
+  selCidade.innerHTML = `<option value="">Todas as cidades</option>` + cidades.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  selRegiao.innerHTML = `<option value="">Todas as praias/regiões</option>` + regioes.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+  selCidade.value = curCidade; selRegiao.value = curRegiao;
+}
+
+function applyFiltersAndRender() {
+  const cidade = document.getElementById("filterCidade").value;
+  const regiao = document.getElementById("filterRegiao").value;
+  const src = currentView === "disponiveis" ? dataDisponiveis : dataVendidos;
+  const filtered = src.filter(r => (!cidade || r.cidade === cidade) && (!regiao || r.regiao === regiao));
+
+  document.getElementById("tblDisponiveis").classList.toggle("hidden", currentView !== "disponiveis");
+  document.getElementById("tblVendidos").classList.toggle("hidden", currentView !== "vendidos");
+  document.getElementById("emptyState").classList.toggle("hidden", filtered.length !== 0);
+  document.getElementById("countNote").textContent = `${filtered.length} imóve${filtered.length === 1 ? "l" : "is"}`;
+
+  if (currentView === "disponiveis") renderDisponiveis(filtered);
+  else renderVendidos(filtered);
+}
+
+function renderVendidos(rows) {
+  const tbody = document.getElementById("bodyVendidos");
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><div class="imovel-name">${escapeHtml(r.nome_interno)}</div><div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
+      <td class="num">${fmtBRLDec(r.valor_este_ano)}</td>
+      <td class="num">${fmtNum(r.noites_este_ano)}</td>
+      <td class="num">${r.antecedencia_este_ano ?? "—"} dias</td>
+      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
+      <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
+      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderDisponiveis(rows) {
+  const tbody = document.getElementById("bodyDisponiveis");
+  tbody.innerHTML = rows.map((r, i) => {
+    const rowId = `row_${r.stays_id_long}`;
+    return `
+    <tr id="${rowId}">
+      <td><div class="imovel-name">${escapeHtml(r.nome_interno)}</div><div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
+      <td class="num" id="${rowId}_diaria">${r.nightly_rate !== null ? fmtBRLDec(r.nightly_rate) : "sem sync"}</td>
+      <td class="num" id="${rowId}_pacote">${r.package_price !== null ? fmtBRLDec(r.package_price) : "sem sync"}</td>
+      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
+      <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
+      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td>
+        <div class="adj-cell">
+          <select id="${rowId}_tipo">
+            <option value="1">Acréscimo</option>
+            <option value="-1">Desconto</option>
+          </select>
+          <input type="number" id="${rowId}_pct" min="0" max="100" step="1" placeholder="%" value="${r.override_pct !== null && r.override_pct !== undefined ? Math.abs(r.override_pct) : ''}" />
+        </div>
+        <div class="preview-price" id="${rowId}_preview"></div>
+      </td>
+      <td>
+        <button class="save-row-btn" onclick="saveOverride('${r.stays_id_long}')">Salvar</button>
+        <div class="applied-tag" id="${rowId}_applied">${r.override_status === 'applied' ? '✓ aplicado na Stays' : ''}</div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  rows.forEach(r => {
+    const rowId = `row_${r.stays_id_long}`;
+    const tipoEl = document.getElementById(`${rowId}_tipo`);
+    const pctEl = document.getElementById(`${rowId}_pct`);
+    const update = () => updatePreview(r, rowId);
+    if (tipoEl) tipoEl.addEventListener("change", update);
+    if (pctEl) pctEl.addEventListener("input", update);
+    if (r.override_pct !== null && r.override_pct !== undefined) {
+      tipoEl.value = r.override_pct >= 0 ? "1" : "-1";
+      updatePreview(r, rowId);
+    }
+  });
+}
+
+function readAdjustment(rowId) {
+  const tipo = Number(document.getElementById(`${rowId}_tipo`).value);
+  const pctRaw = Number(document.getElementById(`${rowId}_pct`).value || 0);
+  return tipo * pctRaw;
+}
+
+function updatePreview(r, rowId) {
+  const pct = readAdjustment(rowId);
+  const preview = document.getElementById(`${rowId}_preview`);
+  if (!pct || r.nightly_rate === null) { preview.textContent = ""; return; }
+  const newNightly = r.nightly_rate * (1 + pct / 100);
+  const newPackage = r.package_price * (1 + pct / 100);
+  preview.textContent = `novo: ${fmtBRLDec(newNightly)}/noite · ${fmtBRLDec(newPackage)} pacote`;
+}
+
+async function saveOverride(staysId) {
+  const rowId = `row_${staysId}`;
+  const row = dataDisponiveis.find(r => r.stays_id_long === staysId);
+  if (!row) return;
+  const pct = readAdjustment(rowId);
+  if (!pct) { alert("Informe um percentual antes de salvar."); return; }
+  if (row.nightly_rate === null) { alert("Esse imóvel ainda não tem preço sincronizado — aguarde o próximo ciclo de sync."); return; }
+
+  const newNightly = row.nightly_rate * (1 + pct / 100);
+  const newPackage = row.package_price * (1 + pct / 100);
+
+  const confirmMsg = `Isso vai gravar o novo preço direto no calendário da Stays para "${row.nome_interno}" (28/12 a 02/01).\n\nDiária: ${fmtBRLDec(row.nightly_rate)} → ${fmtBRLDec(newNightly)}\nPacote: ${fmtBRLDec(row.package_price)} → ${fmtBRLDec(newPackage)}\n\nConfirma?`;
+  if (!confirm(confirmMsg)) return;
+
+  const btn = document.querySelector(`#${rowId} .save-row-btn`);
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+  try {
+    // 1) registra a simulação
+    await rpc("reveillon_save_override", {
+      p_stays_id_long: staysId,
+      p_pct: pct,
+      p_base_nightly: row.nightly_rate,
+      p_base_package: row.package_price,
+      p_new_nightly: newNightly,
+      p_new_package: newPackage,
+    });
+
+    // 2) busca a tarifa base atual (pré-Condição%) na Stays
+    const ratesResp = await staysProxy("/parr/listing-rates-sell", "GET", {
+      listingId: staysId, from: PACKAGE_FROM, to: PACKAGE_TO,
+    });
+    const seasons = ratesResp?.data || [];
+    // pega a temporada que cobre o pacote
+    const season = seasons.find(s => s.from <= PACKAGE_FROM && s.to >= PACKAGE_TO) || seasons[seasons.length - 1];
+    if (!season?.ratePlans?.length) throw new Error("Não encontrei a tarifa base dessa temporada na Stays.");
+
+    const newRatePlans = season.ratePlans.map(rp => ({
+      minStay: rp.minStay,
+      _f_val: Math.round(rp._f_val * (1 + pct / 100) * 100) / 100,
+    }));
+
+    // 3) grava dia a dia (from === to, conforme regra validada no projeto de noites-sanduíche)
+    for (const day of PACKAGE_DAYS) {
+      const patchResp = await staysProxy(`/calendar/listing/${staysId}/batch`, "PATCH", { pricingModel: "rateplans" },
+        [{ from: day, to: day, prices: newRatePlans }]);
+      if (patchResp?._staysStatus >= 400) throw new Error(`Stays recusou a gravação de ${day} (status ${patchResp._staysStatus}).`);
+    }
+
+    // 4) marca como aplicado
+    await rpc("reveillon_mark_override_applied", { p_stays_id_long: staysId });
+    document.getElementById(`${rowId}_applied`).textContent = "✓ aplicado na Stays";
+    row.nightly_rate = newNightly;
+    row.package_price = newPackage;
+    document.getElementById(`${rowId}_diaria`).textContent = fmtBRLDec(newNightly);
+    document.getElementById(`${rowId}_pacote`).textContent = fmtBRLDec(newPackage);
+    document.getElementById(`${rowId}_preview`).textContent = "";
+  } catch (e) {
+    alert("Não consegui gravar na Stays: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Salvar";
+  }
+}
+window.saveOverride = saveOverride;
+
+// ---------- eventos ----------
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("loginBtn");
+  const errEl = document.getElementById("loginError");
+  errEl.textContent = "";
+  btn.disabled = true; btn.textContent = "Entrando...";
+  try {
+    await login(document.getElementById("email").value.trim(), document.getElementById("password").value);
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Entrar";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("refreshBtn").addEventListener("click", loadAll);
+document.getElementById("filterCidade").addEventListener("change", applyFiltersAndRender);
+document.getElementById("filterRegiao").addEventListener("change", applyFiltersAndRender);
+document.querySelectorAll(".toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentView = btn.dataset.view;
+    applyFiltersAndRender();
+  });
+});
+
+function showApp() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  loadAll();
+}
+
+if (restoreSession()) {
+  showApp();
+}
+</script>
+</body>
+</html>
