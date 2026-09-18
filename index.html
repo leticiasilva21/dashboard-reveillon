@@ -140,6 +140,10 @@
     text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700;
     padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;
   }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--navy); }
+  thead th.sortable.active { color: var(--orange); }
+  .sort-arrow { display: inline-block; margin-left: 4px; font-size: 9px; }
   tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #FAFBFC; }
@@ -285,12 +289,6 @@
       </div>
       <select class="filter" id="filterCidade"><option value="">Todas as cidades</option></select>
       <select class="filter" id="filterRegiao"><option value="">Todas as praias/regiões</option></select>
-      <select class="filter" id="sortBy">
-        <option value="nome_asc">Nome (A→Z)</option>
-        <option value="nome_desc">Nome (Z→A)</option>
-        <option value="valor_desc">Valor (maior→menor)</option>
-        <option value="valor_asc">Valor (menor→maior)</option>
-      </select>
       <div class="spacer"></div>
       <span class="count-note" id="countNote"></span>
     </div>
@@ -299,14 +297,14 @@
       <table id="tblDisponiveis">
         <thead>
           <tr>
-            <th>Imóvel</th>
-            <th class="num">Diária</th>
-            <th class="num">Pacote (28/12–02/01)</th>
-            <th class="num">Valor vendido ano passado</th>
-            <th class="num">Diárias vendidas ano passado</th>
-            <th class="num">Antecedência ano passado</th>
-            <th class="num">YoY pacote</th>
-            <th class="num">YoY diária</th>
+            <th class="sortable" data-table="disponiveis" data-field="nome_interno" data-type="text">Imóvel<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="nightly_rate" data-type="num">Diária<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="package_price" data-type="num">Pacote (28/12–02/01)<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="valor_ano_passado" data-type="num">Valor vendido ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="noites_ano_passado" data-type="num">Diárias vendidas ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="antecedencia_ano_passado" data-type="num">Antecedência ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="yoy_pct" data-type="num">YoY pacote<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="yoy_diaria_pct" data-type="num">YoY diária<span class="sort-arrow"></span></th>
             <th>Ajustar %</th>
             <th></th>
           </tr>
@@ -316,13 +314,15 @@
       <table id="tblVendidos" class="hidden">
         <thead>
           <tr>
-            <th>Imóvel</th>
-            <th class="num">Valor este ano</th>
-            <th class="num">Noites</th>
-            <th class="num">Antecedência este ano</th>
-            <th class="num">Valor ano passado</th>
-            <th class="num">Antecedência ano passado</th>
-            <th class="num">YoY %</th>
+            <th class="sortable" data-table="vendidos" data-field="nome_interno" data-type="text">Imóvel<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="valor_este_ano" data-type="num">Valor este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="ticket_noite_este_ano" data-type="num">Ticket/noite<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="noites_este_ano" data-type="num">Noites<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="antecedencia_este_ano" data-type="num">Antecedência este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="valor_ano_passado" data-type="num">Valor ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="antecedencia_ano_passado" data-type="num">Antecedência ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="yoy_pct" data-type="num">YoY valor<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="yoy_diaria_pct" data-type="num">YoY ticket/noite<span class="sort-arrow"></span></th>
           </tr>
         </thead>
         <tbody id="bodyVendidos"></tbody>
@@ -503,7 +503,10 @@ async function loadAll() {
     ]);
     renderKpis(kpis[0]);
     dataDisponiveis = disponiveis;
-    dataVendidos = vendidos;
+    dataVendidos = vendidos.map(r => ({
+      ...r,
+      ticket_noite_este_ano: r.noites_este_ano ? r.valor_este_ano / r.noites_este_ano : null,
+    }));
     populateFilters();
     applyFiltersAndRender();
     document.getElementById("lastUpdated").textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -556,23 +559,43 @@ function populateFilters() {
   selCidade.value = curCidade; selRegiao.value = curRegiao;
 }
 
-function sortRows(rows, sortKey, valueField) {
+const sortState = {
+  disponiveis: { field: "nome_interno", dir: "asc", type: "text" },
+  vendidos: { field: "nome_interno", dir: "asc", type: "text" },
+};
+
+function sortRows(rows, state) {
+  const { field, dir, type } = state;
   const sorted = [...rows];
-  if (sortKey === "nome_asc") sorted.sort((a, b) => (a.nome_interno || "").localeCompare(b.nome_interno || "", "pt-BR"));
-  else if (sortKey === "nome_desc") sorted.sort((a, b) => (b.nome_interno || "").localeCompare(a.nome_interno || "", "pt-BR"));
-  else if (sortKey === "valor_desc") sorted.sort((a, b) => (Number(b[valueField]) || -Infinity) - (Number(a[valueField]) || -Infinity));
-  else if (sortKey === "valor_asc") sorted.sort((a, b) => (Number(a[valueField]) ?? Infinity) - (Number(b[valueField]) ?? Infinity));
+  sorted.sort((a, b) => {
+    let av = a[field], bv = b[field];
+    if (type === "text") {
+      av = av || ""; bv = bv || "";
+      return dir === "asc" ? av.localeCompare(bv, "pt-BR") : bv.localeCompare(av, "pt-BR");
+    }
+    const an = av === null || av === undefined ? -Infinity : Number(av);
+    const bn = bv === null || bv === undefined ? -Infinity : Number(bv);
+    return dir === "asc" ? an - bn : bn - an;
+  });
   return sorted;
+}
+
+function updateSortHeaders() {
+  const state = sortState[currentView];
+  document.querySelectorAll(`th.sortable[data-table="${currentView}"]`).forEach(th => {
+    const isActive = th.dataset.field === state.field;
+    th.classList.toggle("active", isActive);
+    th.querySelector(".sort-arrow").textContent = isActive ? (state.dir === "asc" ? "▲" : "▼") : "";
+  });
 }
 
 function applyFiltersAndRender() {
   const cidade = document.getElementById("filterCidade").value;
   const regiao = document.getElementById("filterRegiao").value;
-  const sortKey = document.getElementById("sortBy").value;
   const src = currentView === "disponiveis" ? dataDisponiveis : dataVendidos;
-  const valueField = currentView === "disponiveis" ? "package_price" : "valor_este_ano";
   let filtered = src.filter(r => (!cidade || r.cidade === cidade) && (!regiao || r.regiao === regiao));
-  filtered = sortRows(filtered, sortKey, valueField);
+  filtered = sortRows(filtered, sortState[currentView]);
+  updateSortHeaders();
 
   document.getElementById("tblDisponiveis").classList.toggle("hidden", currentView !== "disponiveis");
   document.getElementById("tblVendidos").classList.toggle("hidden", currentView !== "vendidos");
@@ -607,17 +630,22 @@ window.copyToClipboard = copyToClipboard;
 
 function renderVendidos(rows) {
   const tbody = document.getElementById("bodyVendidos");
-  tbody.innerHTML = rows.map(r => `
+  tbody.innerHTML = rows.map(r => {
+    const ticketNoite = r.noites_este_ano ? r.valor_este_ano / r.noites_este_ano : null;
+    return `
     <tr>
       <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
       <td class="num">${fmtBRLDec(r.valor_este_ano)}</td>
+      <td class="num">${ticketNoite !== null ? fmtBRLDec(ticketNoite) : "—"}</td>
       <td class="num">${fmtNum(r.noites_este_ano)}</td>
       <td class="num">${r.antecedencia_este_ano ?? "—"} dias</td>
       <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
       <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
       <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num">${yoyHtml(r.yoy_diaria_pct)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderDisponiveis(rows) {
@@ -818,7 +846,22 @@ document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", loadAll);
 document.getElementById("filterCidade").addEventListener("change", applyFiltersAndRender);
 document.getElementById("filterRegiao").addEventListener("change", applyFiltersAndRender);
-document.getElementById("sortBy").addEventListener("change", applyFiltersAndRender);
+document.querySelectorAll("th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+    const table = th.dataset.table;
+    const field = th.dataset.field;
+    const type = th.dataset.type;
+    const state = sortState[table];
+    if (state.field === field) {
+      state.dir = state.dir === "asc" ? "desc" : "asc";
+    } else {
+      state.field = field;
+      state.type = type;
+      state.dir = type === "text" ? "asc" : "desc";
+    }
+    applyFiltersAndRender();
+  });
+});
 document.querySelectorAll(".toggle-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
