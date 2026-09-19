@@ -77,15 +77,17 @@
     background: var(--navy);
     border-bottom: 3px solid var(--orange);
   }
-  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
   .brand-mark {
-    width: 30px; height: 30px; border-radius: 8px; flex: none;
-    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border-radius: 999px; flex: none;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    padding: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
   }
-  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
-  .brand .t1 { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: .01em; }
+  .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand .t1 { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: .01em; }
   .brand .t1 b { color: var(--orange); }
-  .brand .t2 { font-size: 11.5px; color: #B9C2D6; }
+  .brand .t2 { font-size: 12.5px; color: #B9C2D6; }
   .topbar-actions { display: flex; align-items: center; gap: 10px; }
   .sync-note { font-size: 11.5px; color: #B9C2D6; }
   .topbar-actions .btn-ghost { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.18); }
@@ -249,10 +251,7 @@
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">
-        <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="15" cy="15" r="15" fill="#F26B2E"/>
-          <path d="M18.5 9.5a6 6 0 1 0 0 11 7 7 0 1 1 0-11Z" fill="#16294F"/>
-        </svg>
+        <img src="logo.jpeg" alt="Carpediem" />
       </div>
       <div class="brand-text">
         <span class="t1">Carpe<b>diem</b> · Reveillon</span>
