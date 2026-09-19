@@ -162,6 +162,11 @@
     letter-spacing: .02em; color: var(--orange); background: var(--warn-bg); border: 1px solid #F5D2AE;
     border-radius: 4px; padding: 1px 6px; cursor: help;
   }
+  .clone-lock {
+    font-size: 12px; font-weight: 700; color: var(--orange); background: var(--warn-bg);
+    border: 1px solid #F5D2AE; border-radius: 6px; padding: 6px 10px; line-height: 1.45; max-width: 220px;
+  }
+  .clone-lock-sub { font-size: 11px; font-weight: 500; color: var(--muted); }
   .yoy { font-weight: 700; font-variant-numeric: tabular-nums; }
   .yoy.up { color: var(--up); }
   .yoy.down { color: var(--down); }
@@ -654,12 +659,22 @@ function renderDisponiveis(rows) {
   const tbody = document.getElementById("bodyDisponiveis");
   tbody.innerHTML = rows.map((r, i) => {
     const rowId = `row_${r.stays_id_long}`;
-    const cloneBadge = r.is_price_clone
-      ? `<span class="clone-badge" title="Preço clonado de: ${escapeHtml(r.price_master_internal_name || r.price_master_stays_id_long || '')}${r.price_master_id_curto ? ' (' + escapeHtml(r.price_master_id_curto) + ')' : ''}">clone de preço</span>`
-      : "";
+    const adjCell = r.is_price_clone
+      ? `<div class="clone-lock">Clone de preço — não editável<br><span class="clone-lock-sub">segue ${escapeHtml(r.price_master_internal_name || r.price_master_stays_id_long || '')}${r.price_master_id_curto ? ' (' + escapeHtml(r.price_master_id_curto) + ')' : ''}</span></div>`
+      : `<div class="adj-cell">
+          <select id="${rowId}_tipo">
+            <option value="1">Acréscimo</option>
+            <option value="-1">Desconto</option>
+          </select>
+          <input type="number" id="${rowId}_pct" min="0" max="100" step="1" placeholder="%" value="${r.override_pct !== null && r.override_pct !== undefined ? Math.abs(r.override_pct) : ''}" />
+        </div>`;
+    const actionCell = r.is_price_clone
+      ? ""
+      : `<button class="save-row-btn" onclick="saveOverride('${r.stays_id_long}')">Salvar</button>
+        <div class="applied-tag" id="${rowId}_applied">${r.override_status === 'applied' ? '✓ aplicado na Stays' : ''}</div>`;
     return `
     <tr id="${rowId}">
-      <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}${cloneBadge ? " " + cloneBadge : ""}</div></td>
+      <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
       <td class="num" id="${rowId}_diaria">${r.nightly_rate !== null ? fmtBRLDec(r.nightly_rate) : "sem sync"}</td>
       <td class="num" id="${rowId}_pacote">${r.package_price !== null ? fmtBRLDec(r.package_price) : "sem sync"}</td>
       <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
@@ -667,24 +682,14 @@ function renderDisponiveis(rows) {
       <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
       <td class="num">${yoyHtml(r.yoy_pct)}</td>
       <td class="num">${yoyHtml(r.yoy_diaria_pct)}</td>
-      <td>
-        <div class="adj-cell">
-          <select id="${rowId}_tipo">
-            <option value="1">Acréscimo</option>
-            <option value="-1">Desconto</option>
-          </select>
-          <input type="number" id="${rowId}_pct" min="0" max="100" step="1" placeholder="%" value="${r.override_pct !== null && r.override_pct !== undefined ? Math.abs(r.override_pct) : ''}" />
-        </div>
-      </td>
-      <td class="num"><div class="preview-price" id="${rowId}_preview">—</div></td>
-      <td>
-        <button class="save-row-btn" onclick="saveOverride('${r.stays_id_long}')">Salvar</button>
-        <div class="applied-tag" id="${rowId}_applied">${r.override_status === 'applied' ? '✓ aplicado na Stays' : ''}</div>
-      </td>
+      <td>${adjCell}</td>
+      <td class="num">${r.is_price_clone ? "—" : `<div class="preview-price" id="${rowId}_preview">—</div>`}</td>
+      <td>${actionCell}</td>
     </tr>`;
   }).join("");
 
   rows.forEach(r => {
+    if (r.is_price_clone) return;
     const rowId = `row_${r.stays_id_long}`;
     const tipoEl = document.getElementById(`${rowId}_tipo`);
     const pctEl = document.getElementById(`${rowId}_pct`);
