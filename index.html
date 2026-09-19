@@ -785,6 +785,14 @@ async function saveOverride(staysId) {
 window.saveOverride = saveOverride;
 
 // ---------- eventos ----------
+const LOGIN_SHORTCUTS = {
+  "performance": "performance@carpediemhomes.com.br",
+};
+function expandLoginShortcut(value) {
+  const key = value.trim().toLowerCase();
+  return LOGIN_SHORTCUTS[key] || value.trim();
+}
+
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("loginBtn");
@@ -792,7 +800,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   errEl.textContent = "";
   btn.disabled = true; btn.textContent = "Entrando...";
   try {
-    await login(document.getElementById("email").value.trim(), document.getElementById("password").value);
+    await login(expandLoginShortcut(document.getElementById("email").value), document.getElementById("password").value);
     showApp();
   } catch (err) {
     errEl.textContent = err.message;
