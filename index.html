@@ -138,10 +138,16 @@
   .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
   table { width: 100%; border-collapse: collapse; min-width: 920px; }
   thead th {
-    position: sticky; top: 0; background: var(--panel); text-align: left; font-size: 11px;
+    position: sticky; top: 26px; background: var(--panel); text-align: left; font-size: 11px;
     text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700;
     padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;
   }
+  thead tr.group-row th {
+    position: sticky; top: 0; padding: 6px 12px; font-size: 10px; letter-spacing: .04em;
+    color: var(--navy); background: #EFF1F5; border-bottom: 1px solid var(--line); text-align: center;
+  }
+  thead tr.group-row th:first-child { background: var(--panel); }
+  th.grp-start, td.grp-start { border-left: 2px solid var(--line); }
   thead th.sortable { cursor: pointer; user-select: none; }
   thead th.sortable:hover { color: var(--navy); }
   thead th.sortable.active { color: var(--orange); }
@@ -301,17 +307,27 @@
     <div class="table-scroll">
       <table id="tblDisponiveis">
         <thead>
+          <tr class="group-row">
+            <th></th>
+            <th colspan="3" class="grp-start">Diária</th>
+            <th colspan="3" class="grp-start">Pacote / faturamento</th>
+            <th colspan="2" class="grp-start">Diárias no período</th>
+            <th class="grp-start">Antecedência</th>
+            <th colspan="3" class="grp-start">Ajuste de preço</th>
+          </tr>
           <tr>
             <th class="sortable" data-table="disponiveis" data-field="nome_interno" data-type="text">Imóvel<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="nightly_rate" data-type="num">Diária<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="package_price" data-type="num">Pacote (28/12–02/01)<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="valor_ano_passado" data-type="num">Valor vendido ano passado<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="noites_ano_passado" data-type="num">Diárias vendidas ano passado<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="antecedencia_ano_passado" data-type="num">Antecedência ano passado<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="yoy_pct" data-type="num">YoY pacote<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="disponiveis" data-field="yoy_diaria_pct" data-type="num">YoY diária<span class="sort-arrow"></span></th>
-            <th>Ajustar %</th>
-            <th class="num">Sugestão (diária / pacote)</th>
+            <th class="num sortable grp-start" data-table="disponiveis" data-field="nightly_rate" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="diaria_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="yoy_diaria_pct" data-type="num">YoY<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="disponiveis" data-field="package_price" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="valor_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="disponiveis" data-field="yoy_pct" data-type="num">YoY<span class="sort-arrow"></span></th>
+            <th class="num grp-start">Este ano</th>
+            <th class="num sortable" data-table="disponiveis" data-field="noites_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="disponiveis" data-field="antecedencia_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="grp-start">%</th>
+            <th class="num">Sugestão</th>
             <th></th>
           </tr>
         </thead>
@@ -319,16 +335,25 @@
       </table>
       <table id="tblVendidos" class="hidden">
         <thead>
+          <tr class="group-row">
+            <th></th>
+            <th colspan="3" class="grp-start">Ticket/noite</th>
+            <th colspan="3" class="grp-start">Faturamento</th>
+            <th colspan="2" class="grp-start">Noites</th>
+            <th colspan="2" class="grp-start">Antecedência</th>
+          </tr>
           <tr>
             <th class="sortable" data-table="vendidos" data-field="nome_interno" data-type="text">Imóvel<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="valor_este_ano" data-type="num">Valor este ano<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="ticket_noite_este_ano" data-type="num">Ticket/noite<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="noites_este_ano" data-type="num">Noites<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="antecedencia_este_ano" data-type="num">Antecedência este ano<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="valor_ano_passado" data-type="num">Valor ano passado<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="antecedencia_ano_passado" data-type="num">Antecedência ano passado<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="yoy_pct" data-type="num">YoY valor<span class="sort-arrow"></span></th>
-            <th class="num sortable" data-table="vendidos" data-field="yoy_diaria_pct" data-type="num">YoY ticket/noite<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="vendidos" data-field="ticket_noite_este_ano" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="ticket_noite_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="yoy_diaria_pct" data-type="num">YoY<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="vendidos" data-field="valor_este_ano" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="valor_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="yoy_pct" data-type="num">YoY<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="vendidos" data-field="noites_este_ano" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="noites_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
+            <th class="num sortable grp-start" data-table="vendidos" data-field="antecedencia_este_ano" data-type="num">Este ano<span class="sort-arrow"></span></th>
+            <th class="num sortable" data-table="vendidos" data-field="antecedencia_ano_passado" data-type="num">Ano passado<span class="sort-arrow"></span></th>
           </tr>
         </thead>
         <tbody id="bodyVendidos"></tbody>
@@ -508,10 +533,14 @@ async function loadAll() {
       rpc("reveillon_sold_list"),
     ]);
     renderKpis(kpis[0]);
-    dataDisponiveis = disponiveis;
+    dataDisponiveis = disponiveis.map(r => ({
+      ...r,
+      diaria_ano_passado: r.noites_ano_passado ? r.valor_ano_passado / r.noites_ano_passado : null,
+    }));
     dataVendidos = vendidos.map(r => ({
       ...r,
       ticket_noite_este_ano: r.noites_este_ano ? r.valor_este_ano / r.noites_este_ano : null,
+      ticket_noite_ano_passado: r.noites_ano_passado ? r.valor_ano_passado / r.noites_ano_passado : null,
     }));
     populateFilters();
     applyFiltersAndRender();
@@ -636,22 +665,21 @@ window.copyToClipboard = copyToClipboard;
 
 function renderVendidos(rows) {
   const tbody = document.getElementById("bodyVendidos");
-  tbody.innerHTML = rows.map(r => {
-    const ticketNoite = r.noites_este_ano ? r.valor_este_ano / r.noites_este_ano : null;
-    return `
+  tbody.innerHTML = rows.map(r => `
     <tr>
       <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
-      <td class="num">${fmtBRLDec(r.valor_este_ano)}</td>
-      <td class="num">${ticketNoite !== null ? fmtBRLDec(ticketNoite) : "—"}</td>
-      <td class="num">${fmtNum(r.noites_este_ano)}</td>
-      <td class="num">${r.antecedencia_este_ano ?? "—"} dias</td>
-      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
-      <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
-      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num grp-start">${r.ticket_noite_este_ano !== null ? fmtBRLDec(r.ticket_noite_este_ano) : "—"}</td>
+      <td class="num">${r.ticket_noite_ano_passado !== null ? fmtBRLDec(r.ticket_noite_ano_passado) : "—"}</td>
       <td class="num">${yoyHtml(r.yoy_diaria_pct)}</td>
+      <td class="num grp-start">${fmtBRLDec(r.valor_este_ano)}</td>
+      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
+      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num grp-start">${fmtNum(r.noites_este_ano)}</td>
+      <td class="num">${r.noites_ano_passado !== null && r.noites_ano_passado !== undefined ? fmtNum(r.noites_ano_passado) : "—"}</td>
+      <td class="num grp-start">${r.antecedencia_este_ano ?? "—"} dias</td>
+      <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
     </tr>
-  `;
-  }).join("");
+  `).join("");
 }
 
 function renderDisponiveis(rows) {
@@ -674,14 +702,16 @@ function renderDisponiveis(rows) {
     return `
     <tr id="${rowId}">
       <td>${idCell(r.nome_interno, r.id_curto)}<div class="imovel-loc">${escapeHtml(r.cidade || "")}${r.regiao ? " · " + escapeHtml(r.regiao) : ""}</div></td>
-      <td class="num" id="${rowId}_diaria">${r.nightly_rate !== null ? fmtBRLDec(r.nightly_rate) : "sem sync"}</td>
-      <td class="num" id="${rowId}_pacote">${r.package_price !== null ? fmtBRLDec(r.package_price) : "sem sync"}</td>
-      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
-      <td class="num">${r.noites_ano_passado !== null && r.noites_ano_passado !== undefined ? fmtNum(r.noites_ano_passado) : "—"}</td>
-      <td class="num">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
-      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num grp-start" id="${rowId}_diaria">${r.nightly_rate !== null ? fmtBRLDec(r.nightly_rate) : "sem sync"}</td>
+      <td class="num">${r.diaria_ano_passado !== null ? fmtBRLDec(r.diaria_ano_passado) : "—"}</td>
       <td class="num">${yoyHtml(r.yoy_diaria_pct)}</td>
-      <td>${adjCell}</td>
+      <td class="num grp-start" id="${rowId}_pacote">${r.package_price !== null ? fmtBRLDec(r.package_price) : "sem sync"}</td>
+      <td class="num">${r.valor_ano_passado !== null ? fmtBRLDec(r.valor_ano_passado) : "—"}</td>
+      <td class="num">${yoyHtml(r.yoy_pct)}</td>
+      <td class="num grp-start">${r.package_nights ?? 6}</td>
+      <td class="num">${r.noites_ano_passado !== null && r.noites_ano_passado !== undefined ? fmtNum(r.noites_ano_passado) : "—"}</td>
+      <td class="num grp-start">${r.antecedencia_ano_passado !== null && r.antecedencia_ano_passado !== undefined ? r.antecedencia_ano_passado + " dias" : "—"}</td>
+      <td class="grp-start">${adjCell}</td>
       <td class="num">${r.is_price_clone ? "—" : `<div class="preview-price" id="${rowId}_preview">—</div>`}</td>
       <td>${actionCell}</td>
     </tr>`;
