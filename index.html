@@ -172,7 +172,8 @@
   .adj-cell input[type="number"] {
     width: 58px; padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; text-align: right;
   }
-  .preview-price { font-size: 11.5px; color: var(--orange); font-weight: 700; margin-top: 2px; }
+  .preview-price { font-size: 13px; color: var(--orange); font-weight: 700; line-height: 1.5; white-space: nowrap; }
+  .preview-sep { font-size: 10.5px; font-weight: 500; color: var(--muted); }
   .save-row-btn {
     font-size: 11.5px; padding: 5px 9px; border-radius: 6px; background: var(--navy); color: #fff; border: none; cursor: pointer;
   }
@@ -306,6 +307,7 @@
             <th class="num sortable" data-table="disponiveis" data-field="yoy_pct" data-type="num">YoY pacote<span class="sort-arrow"></span></th>
             <th class="num sortable" data-table="disponiveis" data-field="yoy_diaria_pct" data-type="num">YoY diária<span class="sort-arrow"></span></th>
             <th>Ajustar %</th>
+            <th class="num">Sugestão (diária / pacote)</th>
             <th></th>
           </tr>
         </thead>
@@ -673,8 +675,8 @@ function renderDisponiveis(rows) {
           </select>
           <input type="number" id="${rowId}_pct" min="0" max="100" step="1" placeholder="%" value="${r.override_pct !== null && r.override_pct !== undefined ? Math.abs(r.override_pct) : ''}" />
         </div>
-        <div class="preview-price" id="${rowId}_preview"></div>
       </td>
+      <td class="num"><div class="preview-price" id="${rowId}_preview">—</div></td>
       <td>
         <button class="save-row-btn" onclick="saveOverride('${r.stays_id_long}')">Salvar</button>
         <div class="applied-tag" id="${rowId}_applied">${r.override_status === 'applied' ? '✓ aplicado na Stays' : ''}</div>
@@ -705,10 +707,10 @@ function readAdjustment(rowId) {
 function updatePreview(r, rowId) {
   const pct = readAdjustment(rowId);
   const preview = document.getElementById(`${rowId}_preview`);
-  if (!pct || r.nightly_rate === null) { preview.textContent = ""; return; }
+  if (!pct || r.nightly_rate === null) { preview.innerHTML = "—"; return; }
   const newNightly = r.nightly_rate * (1 + pct / 100);
   const newPackage = r.package_price * (1 + pct / 100);
-  preview.textContent = `novo: ${fmtBRLDec(newNightly)}/noite · ${fmtBRLDec(newPackage)} pacote`;
+  preview.innerHTML = `${fmtBRLDec(newNightly)}<span class="preview-sep">/noite</span><br>${fmtBRLDec(newPackage)}<span class="preview-sep"> pacote</span>`;
 }
 
 async function saveOverride(staysId) {
@@ -767,7 +769,7 @@ async function saveOverride(staysId) {
     row.package_price = newPackage;
     document.getElementById(`${rowId}_diaria`).textContent = fmtBRLDec(newNightly);
     document.getElementById(`${rowId}_pacote`).textContent = fmtBRLDec(newPackage);
-    document.getElementById(`${rowId}_preview`).textContent = "";
+    document.getElementById(`${rowId}_preview`).innerHTML = "—";
   } catch (e) {
     alert("Não consegui gravar na Stays: " + e.message);
   } finally {
